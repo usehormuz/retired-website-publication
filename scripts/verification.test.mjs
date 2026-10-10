@@ -20,6 +20,7 @@ function publishedSite() {
   bodies.set('/evidence/', bodies.get('/evidence/') + '<section id="work-proof"><a href="/downloads/ai-work-proof.json">Receipt</a></section>');
   for (const [route, sources] of Object.entries(LIVE_SOURCE_LINKS)) bodies.set(route, bodies.get(route) + sources.map(source => `<a href="https://github.com/${pin.repository}/blob/${pin.revision}/${source}">Source</a>`).join(''));
   bodies.set('/docs/', bodies.get('/docs/') + `<section id="examples"><pre><code>git checkout --detach ${pin.revision}\npython tools/ai_work_provider_examples.py</code></pre></section><pre><code>python -m pip install 'hormuz[client,context] @ git+https://github.com/${pin.repository}.git@${pin.revision}'</code></pre>`);
+  bodies.set('/guides/software-agency-ai-budgets/', bodies.get('/guides/software-agency-ai-budgets/') + `<pre><code>git checkout --detach ${pin.revision}\nhormuz policy demo</code></pre><section id="team-next"><a href="/plans/#offers">Compare services</a><a href="/contact/?interest=review">Discuss setup</a></section>`);
   for (const name of LIVE_DOWNLOADS) bodies.set(`/downloads/${name}`, name.endsWith('.pdf') ? '%PDF-fixture' : name.endsWith('.json') ? JSON.stringify({ schema_id: 'hormuz.ai-work-proof', schema_version: 1, conditions: { real_provider_calls: 0, real_payments: 0, customer_savings_validated: false, production_quality_validated: false }, checks: [{ check: 'synthetic_verifier_fixture', passed: true }] }) : Buffer.from([0x50, 0x4b, 0x03, 0x04, 0]));
   const requests = [];
   return {
@@ -39,11 +40,11 @@ function publishedSite() {
 
 test('post-deploy verification checks the pinned source, all routes, metadata, and five downloads', async () => {
   assert.equal(LIVE_ORIGIN, SITE_ORIGIN);
-  assert.equal(LIVE_ROUTES.length, 16);
+  assert.equal(LIVE_ROUTES.length, 17);
   assert.ok(LIVE_ROUTES.includes('/work/') && LIVE_ROUTES.includes('/evidence/'));
   const site = publishedSite();
-  assert.deepEqual(await verifyLiveSite(pin, site.fetcher), { verdict: 'passed', source_revision: pin.revision, pages: 16, downloads: 5 });
-  assert.equal(site.requests.length, 25);
+  assert.deepEqual(await verifyLiveSite(pin, site.fetcher), { verdict: 'passed', source_revision: pin.revision, pages: 17, downloads: 5 });
+  assert.equal(site.requests.length, 26);
 });
 
 test('a stale or invalid deployed pin fails before any page is accepted', async () => {
@@ -80,6 +81,7 @@ test('missing routes, wrong canonicals, HTML downloads, and incomplete metadata 
     ['/plans/', undefined],
     ['/workspace/', undefined],
     ['/guides/team-ai-budgets/', undefined],
+    ['/guides/software-agency-ai-budgets/', undefined],
     ['/guides/codex-claude-code-gateway/', '<h1>Guide</h1><link rel="canonical" href="https://wrong.example/"/>'],
     ['/enterprise/', '<h1>Hormuz</h1><link rel="canonical" href="https://wrong.example/"/>'],
     ['/downloads/hormuz-overview.pdf', '<html>Error</html>'],
@@ -165,4 +167,20 @@ test('the publication build preserves its ownership artifact and isolated main-o
   assert.doesNotMatch(build, /pages: write|id-token: write|contents: write/);
   assert.ok(workflow.includes('HORMUZ_DASHBOARD_ORIGIN: ${{ vars.HORMUZ_DASHBOARD_ORIGIN }}'));
   for (const command of ['build', 'verify']) assert.ok(workflow.includes('NEXT_PUBLIC_HORMUZ_SOURCE_REVISION: ${{ steps.source.outputs.revision }}\n        run: npm run ' + command));
+});
+
+
+test('agency walkthrough rejects an unpinned install or missing service handoff', async () => {
+  const route = '/guides/software-agency-ai-budgets/';
+  for (const [from, to] of [
+    [`git checkout --detach ${pin.revision}`, 'git checkout --detach main'],
+    [`git checkout --detach ${pin.revision}`, `git checkout --detach ${pin.revision}0`],
+    ['id="team-next"', 'id="missing-next"'],
+    ['href="/plans/#offers"', 'href="/plans/"'],
+    ['href="/contact/?interest=review"', 'href="/contact/"'],
+  ]) {
+    const site = publishedSite();
+    site.bodies.set(route, site.bodies.get(route).replace(from, to));
+    await assert.rejects(verifyLiveSite(pin, site.fetcher), /agency walkthrough/);
+  }
 });

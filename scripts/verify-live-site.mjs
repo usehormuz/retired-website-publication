@@ -5,11 +5,12 @@ import { pathToFileURL } from 'node:url';
 import { validateSourcePin } from './verify-source-pin.mjs';
 
 export const LIVE_ORIGIN = 'https://usehormuz.github.io';
-export const LIVE_ROUTES = Object.freeze(['/', '/plans/', '/docs/', '/demo/', '/integrations/', '/enterprise/', '/security/', '/resources/', '/contact/', '/privacy/', '/brand/', '/workspace/', '/work/', '/evidence/', '/guides/team-ai-budgets/', '/guides/codex-claude-code-gateway/']);
+export const LIVE_ROUTES = Object.freeze(['/', '/plans/', '/docs/', '/demo/', '/integrations/', '/enterprise/', '/security/', '/resources/', '/contact/', '/privacy/', '/brand/', '/workspace/', '/work/', '/evidence/', '/guides/team-ai-budgets/', '/guides/codex-claude-code-gateway/', '/guides/software-agency-ai-budgets/']);
 export const LIVE_DOWNLOADS = Object.freeze(['hormuz-overview.pdf', 'hormuz-appliance-brief.pdf', 'hormuz-trust-brief.pdf', 'hormuz-buyer-briefing.pptx', 'ai-work-proof.json']);
 export const LIVE_VERIFICATION_FILES = Object.freeze(['googlede76ed201f5cf6d4.html']);
 export const LIVE_SOURCE_LINKS = Object.freeze({
   '/docs/': ['docs/AI_WORK_AGENT_INTEGRATION.md', 'docs/AI_WORK_RUNTIME.md', 'examples/providers/README.md', 'examples/sdk/README.md', 'docs/AI_WORK_DELIVERY_EXAMPLES.md', 'docs/TRY_HORMUZ.md'],
+  '/guides/software-agency-ai-budgets/': ['docs/POLICY_CONTROL.md', 'docs/USAGE.md', 'SUPPORT.md', 'config.example.json'],
   '/evidence/': ['tools/ai_work_proof.py'],
   '/demo/': ['website/scripts/ai-work-browser-qa.mjs'],
 });
@@ -62,6 +63,11 @@ export async function verifyLiveSite(sourcePin, fetcher = fetch, { dashboardOrig
       assert.ok([...html.matchAll(/<pre\b[^>]*>[\s\S]*?<\/pre>/g)].some(([block]) => block.includes(`git+https://github.com/${sourcePin.repository}.git@${revision}`)), 'Published candidate installation does not match the reviewed pin');
       const checkout = new RegExp(`(?:^|[>\\n])git checkout --detach ${revision}(?=[<\\n]|$)`);
       assert.ok([...html.matchAll(/<pre\b[^>]*>[\s\S]*?<\/pre>/g)].some(([block]) => checkout.test(block) && block.includes('python tools/ai_work_provider_examples.py')), 'Published example checkout does not match the reviewed pin');
+    }
+    if (route === '/guides/software-agency-ai-budgets/') {
+      const checkout = new RegExp(`(?:^|[>\\n])git checkout --detach ${revision}(?=[<\\n]|$)`);
+      assert.ok([...html.matchAll(/<pre\b[^>]*>[\s\S]*?<\/pre>/g)].some(([block]) => checkout.test(block) && block.includes('hormuz policy demo')), 'Published agency walkthrough does not use the reviewed source pin');
+      assert.ok(html.includes('id="team-next"') && html.includes('href="/plans/#offers"') && html.includes('href="/contact/?interest=review"'), 'Published agency walkthrough is missing the service next steps');
     }
     if (route === '/work/' && workDestination) assert.ok(html.includes(`href="${workDestination}"`), 'Published AI Work entry does not point to the configured gateway');
     if (route === '/demo/') assert.ok(html.includes('id="work-demo"') && html.includes('/demo/ai-work-demo.webm'), 'Published demo is missing the actual work recording');
