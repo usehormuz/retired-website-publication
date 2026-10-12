@@ -15,7 +15,7 @@ function publishedSite() {
   ]);
   for (const name of LIVE_VERIFICATION_FILES) bodies.set(`/${name}`, `google-site-verification: ${name}`);
   for (const route of LIVE_ROUTES) bodies.set(route, `<link rel="canonical" href="${LIVE_ORIGIN}${route}"/><h1>Hormuz</h1>`);
-  bodies.set('/', bodies.get('/') + '<a href="/docs/#examples">Try the examples</a>');
+  bodies.set('/', bodies.get('/') + '<header><a class="nav-cta" href="https://github.com/Xpounder-com/hormuz#quickstart">Try free on GitHub <span aria-hidden="true">→</span></a></header><section id="top"><a class="button landing-primary" href="https://github.com/Xpounder-com/hormuz#quickstart">Try free on GitHub <span aria-hidden="true">→</span></a><a href="/demo/#work-demo">Watch the demo</a></section><section id="benefits"></section><section id="free"></section><section id="hosting"></section>');
   bodies.set('/demo/', bodies.get('/demo/') + '<section id="work-demo"><video src="/demo/ai-work-demo.webm"></video></section>');
   bodies.set('/evidence/', bodies.get('/evidence/') + '<section id="work-proof"><a href="/downloads/ai-work-proof.json">Receipt</a></section>');
   for (const [route, sources] of Object.entries(LIVE_SOURCE_LINKS)) bodies.set(route, bodies.get(route) + sources.map(source => `<a href="https://github.com/${pin.repository}/blob/${pin.revision}/${source}">Source</a>`).join(''));
@@ -53,6 +53,20 @@ test('a stale or invalid deployed pin fails before any page is accepted', async 
     site.bodies.set('/site-source.json', body);
     await assert.rejects(verifyLiveSite(pin, site.fetcher));
     assert.deepEqual(site.requests, ['/site-source.json']);
+  }
+});
+
+test('homepage trial links must reach the quickstart and free setup must precede hosting', async () => {
+  for (const [from, to, message] of [
+    ['class="button landing-primary" href="https://github.com/Xpounder-com/hormuz#quickstart"', 'class="button landing-primary" href="https://github.com/Xpounder-com/hormuz"', /hero must point to the GitHub quickstart/],
+    ['class="nav-cta" href="https://github.com/Xpounder-com/hormuz#quickstart"', 'class="nav-cta" href="/plans/"', /header must point to the GitHub quickstart/],
+    ['<section id="free"></section><section id="hosting"></section>', '<section id="hosting"></section><section id="free"></section>', /benefits, free setup, then optional hosting/],
+    ['href="/demo/#work-demo"', 'href="/demo/"', /missing the work demo link/],
+  ]) {
+    const site = publishedSite();
+    site.bodies.set('/', site.bodies.get('/').replace(from, to));
+    await assert.rejects(verifyLiveSite(pin, site.fetcher), message);
+    assert.deepEqual(site.requests, ['/site-source.json', ...LIVE_VERIFICATION_FILES.map(name => `/${name}`), '/']);
   }
 });
 
@@ -98,9 +112,8 @@ test('missing routes, wrong canonicals, HTML downloads, and incomplete metadata 
   }
 });
 
-test('the example entry, checkout and all four trial guides must be published at the reviewed revision', async () => {
+test('the docs example destination, checkout and all four trial guides must be published at the reviewed revision', async () => {
   for (const [route, from, to] of [
-    ['/', 'href="/docs/#examples"', 'href="/docs/"'],
     ['/docs/', 'id="examples"', 'id="old-setup"'],
     ['/docs/', `git checkout --detach ${pin.revision}`, 'git checkout --detach main'],
     ['/docs/', `git checkout --detach ${pin.revision}`, `git checkout --detach ${'0'.repeat(40)}`],
