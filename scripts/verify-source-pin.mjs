@@ -13,9 +13,18 @@ export function validateSourcePin(value) {
   return value.revision;
 }
 
+// The immutable snapshot was authored under Xpounder. Its embedded links and
+// published provenance keep that name; only the checkout location changes.
+export function sourceCheckoutRepository(value) {
+  validateSourcePin(value);
+  return 'mehrdadxzaker/hormuz';
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  const revision = validateSourcePin(JSON.parse(await readFile('site-source.json', 'utf8')));
+  const pin = JSON.parse(await readFile('site-source.json', 'utf8'));
+  const revision = validateSourcePin(pin);
+  const repository = sourceCheckoutRepository(pin);
   assert.ok(process.env.GITHUB_OUTPUT, 'This entrypoint runs inside GitHub Actions');
-  await appendFile(process.env.GITHUB_OUTPUT, `revision=${revision}\n`);
-  console.log(`Reviewed website source: Xpounder-com/hormuz@${revision}`);
+  await appendFile(process.env.GITHUB_OUTPUT, `repository=${repository}\nrevision=${revision}\n`);
+  console.log(`Reviewed website source: ${repository}@${revision} (authored as ${pin.repository})`);
 }

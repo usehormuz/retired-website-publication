@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const SITE_ORIGIN = 'https://usehormuz.github.io';
 import { LIVE_ORIGIN, LIVE_ROUTES, LIVE_DOWNLOADS, LIVE_VERIFICATION_FILES, LIVE_SOURCE_LINKS, verifyLiveSite } from './verify-live-site.mjs';
-import { validateSourcePin } from './verify-source-pin.mjs';
+import { sourceCheckoutRepository, validateSourcePin } from './verify-source-pin.mjs';
 
 const pin = { repository: 'Xpounder-com/hormuz', revision: '9af53c79d1671638a57dba9d758482c7d4f88ef8' };
 
@@ -168,13 +168,18 @@ test('missing or altered ownership files cannot satisfy publication verification
 
 test('the public source pin cannot name another repository or mutable reference', () => {
   assert.equal(validateSourcePin(pin), pin.revision);
-  for (const invalid of [{...pin, revision:'main'}, {...pin, revision:pin.revision+'\n'}, {...pin, repository:'other/project'}, {...pin, token:'forbidden'}]) assert.throws(() => validateSourcePin(invalid));
+  assert.equal(sourceCheckoutRepository(pin), 'mehrdadxzaker/hormuz');
+  for (const invalid of [{...pin, revision:'main'}, {...pin, revision:pin.revision+'\n'}, {...pin, repository:'other/project'}, {...pin, token:'forbidden'}]) {
+    assert.throws(() => validateSourcePin(invalid));
+    assert.throws(() => sourceCheckoutRepository(invalid));
+  }
 });
 
 test('the publication build preserves its ownership artifact and isolated main-only deployment', () => {
   const workflow = readFileSync(new URL('../.github/workflows/website.yml', import.meta.url), 'utf8');
   assert.ok(workflow.includes('cp verification/' + LIVE_VERIFICATION_FILES[0] + ' product/website/out/'));
   assert.ok(workflow.includes('run: node --test scripts/verification.test.mjs'));
+  assert.ok(workflow.includes('repository: ${{ steps.source.outputs.repository }}'));
   assert.ok(workflow.includes("github.event_name != 'pull_request' && github.ref == 'refs/heads/main'"));
   const build = workflow.slice(workflow.indexOf('  build:'), workflow.indexOf('  deploy:'));
   assert.doesNotMatch(build, /pages: write|id-token: write|contents: write/);
