@@ -4,9 +4,16 @@ Publication repository for the Hormuz project website at
 [usehormuz.github.io](https://usehormuz.github.io/).
 
 The authoritative website source, product development, releases, and issue
-tracker remain in [Xpounder-com/hormuz](https://github.com/Xpounder-com/hormuz).
+tracker are at [mehrdadxzaker/hormuz](https://github.com/mehrdadxzaker/hormuz).
 This repository contains only the reviewed source pin and website publication
 configuration. It does not duplicate or transfer the product repository.
+
+The build checks out that destination at the existing immutable revision.
+`site-source.json` retains `Xpounder-com/hormuz` as the snapshot's original
+source identity: the snapshot's embedded links and installation examples use
+that name. Keep the old repository redirect available. Do not change the pin
+to current router `main`, which no longer includes the website. This checkout
+mapping is for use after the repository transfer has been separately approved.
 
 ## Updates and verification
 
@@ -44,9 +51,9 @@ live check verifies its contents after deployment. Keep the file published after
 verification succeeds so ownership remains valid.
 
 The matching workflow and helper templates live in
-[`website/deployment`](https://github.com/Xpounder-com/hormuz/tree/main/website/deployment)
+[`website/deployment`](https://github.com/mehrdadxzaker/hormuz/tree/46449d2a3f05de09d7d0a18c9688e189a6c3a68e/website/deployment)
 in the product repository. See its
-[`website/README.md`](https://github.com/Xpounder-com/hormuz/blob/main/website/README.md)
+[`website/README.md`](https://github.com/mehrdadxzaker/hormuz/blob/46449d2a3f05de09d7d0a18c9688e189a6c3a68e/website/README.md)
 for compatibility redirects and the initial two-phase migration.
 This publication repository deliberately adds its existing Search Console
 ownership file, the corresponding live check, and publication-specific regression

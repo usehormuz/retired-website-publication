@@ -38,7 +38,7 @@ jobs:
       - name: Check out the exact public product source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: Xpounder-com/hormuz
+          repository: ${{ steps.source.outputs.repository }}
           ref: ${{ steps.source.outputs.revision }}
           path: product
           persist-credentials: false
